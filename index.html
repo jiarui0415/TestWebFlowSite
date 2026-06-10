@@ -406,35 +406,49 @@ margin: 0rem !important;
 		}
 	};
 
-	function applyFinnButton(attemptsLeft) {
-		var root = document.querySelector('embeddedMessaging') && document.querySelector('embeddedMessaging').shadowRoot;
-		if (!root) {
-			if (attemptsLeft > 0) setTimeout(function() { applyFinnButton(attemptsLeft - 1); }, 300);
-			return;
-		}
-		var btn = root.querySelector('.embeddedMessagingConversationButton');
-		if (!btn) {
-			if (attemptsLeft > 0) setTimeout(function() { applyFinnButton(attemptsLeft - 1); }, 300);
-			return;
-		}
-		// Change label
-		var label = root.querySelector('.embeddedMessagingConversationButtonText') ||
-			root.querySelector('[class*="buttonText"]') ||
-			root.querySelector('[class*="label"]');
-		if (label) label.textContent = 'Ask Finn Anything';
-		// Inject avatar if not already there
-		if (!root.querySelector('.finn-avatar')) {
+	function patchFinnButton(btn) {
+		// Hide all SVG icons inside button
+		btn.querySelectorAll('svg, [class*="icon"], [class*="Icon"]').forEach(function(el) {
+			el.style.display = 'none';
+		});
+		// Change label text — find leaf text nodes
+		btn.querySelectorAll('span, div, p, label').forEach(function(el) {
+			if (el.children.length === 0 && el.textContent.trim().length > 0) {
+				el.textContent = 'Ask Finn Anything';
+			}
+		});
+		// Inject avatar once
+		if (!btn.querySelector('.finn-avatar')) {
 			var img = document.createElement('img');
 			img.src = 'https://raw.githubusercontent.com/jiarui0415/Asymbl_AgentAPI/refs/heads/main/Website/images/FinnHeadshot.jpg';
 			img.className = 'finn-avatar';
 			img.alt = 'Finn';
+			img.style.cssText = 'width:40px;height:40px;border-radius:50%;border:2px solid #fff;object-fit:cover;flex-shrink:0;display:inline-block;';
 			btn.insertBefore(img, btn.firstChild);
 		}
 	}
 
-	window.addEventListener('onEmbeddedMessagingReady', function() {
-		applyFinnButton(5);
-	});
+	function watchForFinnButton() {
+		var bodyObs = new MutationObserver(function() {
+			var em = document.querySelector('embeddedMessaging');
+			if (!em) return;
+			bodyObs.disconnect();
+			var pollInterval = setInterval(function() {
+				var root = em.shadowRoot;
+				if (!root) return;
+				var btn = root.querySelector('button');
+				if (!btn) return;
+				clearInterval(pollInterval);
+				patchFinnButton(btn);
+				// Re-patch if Salesforce re-renders the button
+				new MutationObserver(function() {
+					patchFinnButton(btn);
+				}).observe(btn, { childList: true, subtree: true });
+			}, 200);
+		});
+		bodyObs.observe(document.body, { childList: true, subtree: true });
+	}
+	watchForFinnButton();
 </script>
 <script type='text/javascript' src='https://asymbl-mo--fde.sandbox.my.site.com/ESWAAAFDEFinnGitHub1781125173704/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
 
