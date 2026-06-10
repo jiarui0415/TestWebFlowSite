@@ -382,13 +382,15 @@ margin: 0rem !important;
               .embeddedMessagingConversationButton svg {
                   display: none !important;
               }
-              .finn-avatar {
-                  width: 40px;
-                  height: 40px;
-                  border-radius: 50%;
-                  border: 2px solid #FFFFFF;
-                  object-fit: cover;
-                  flex-shrink: 0;
+              .embeddedMessagingConversationButton::before {
+                  content: url('https://raw.githubusercontent.com/jiarui0415/Asymbl_AgentAPI/refs/heads/main/Website/images/FinnHeadshot.jpg');
+                  display: block !important;
+                  width: 40px !important;
+                  height: 40px !important;
+                  border-radius: 50% !important;
+                  border: 2px solid #FFFFFF !important;
+                  overflow: hidden !important;
+                  flex-shrink: 0 !important;
               }
           `;
 
@@ -405,18 +407,6 @@ margin: 0rem !important;
           console.error('Error loading Embedded Messaging: ', err);
       }
   };
-
-  // Wait for the button to be ready, then inject the avatar
-  window.addEventListener('onEmbeddedMessagingReady', () => {
-      const btn = document.querySelector('.embeddedMessagingConversationButton');
-      if (btn && !btn.querySelector('.finn-avatar')) {
-          const avatar = document.createElement('img');
-          avatar.src = 'https://raw.githubusercontent.com/jiarui0415/Asymbl_AgentAPI/refs/heads/main/Website/images/FinnHeadshot.jpg';
-          avatar.alt = 'Finn';
-          avatar.className = 'finn-avatar';
-          btn.prepend(avatar); // inserts before the button label
-      }
-  });
 </script>
 <script type='text/javascript' src='https://asymbl-mo--fde.sandbox.my.site.com/ESWAAAFDEFinnGitHub1781125173704/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
 
