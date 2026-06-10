@@ -406,24 +406,40 @@ margin: 0rem !important;
 		}
 	};
 
+	// Recursively search through nested shadow DOMs for a button element
+	function deepQueryButton(root) {
+		if (!root) return null;
+		var btn = root.querySelector('button');
+		if (btn) return btn;
+		var all = root.querySelectorAll('*');
+		for (var i = 0; i < all.length; i++) {
+			if (all[i].shadowRoot) {
+				var found = deepQueryButton(all[i].shadowRoot);
+				if (found) return found;
+			}
+		}
+		return null;
+	}
+
 	function patchFinnButton(btn) {
-		// Hide all SVG icons inside button
-		btn.querySelectorAll('svg, [class*="icon"], [class*="Icon"]').forEach(function(el) {
+		// Hide SVGs — must walk into button's own shadow if present
+		var searchRoot = btn.shadowRoot || btn;
+		searchRoot.querySelectorAll('svg, [class*="icon"], [class*="Icon"]').forEach(function(el) {
 			el.style.display = 'none';
 		});
-		// Change label text — find leaf text nodes
-		btn.querySelectorAll('span, div, p, label').forEach(function(el) {
+		// Change label text — leaf text nodes
+		searchRoot.querySelectorAll('span, div, p, label').forEach(function(el) {
 			if (el.children.length === 0 && el.textContent.trim().length > 0) {
 				el.textContent = 'Ask Finn Anything';
 			}
 		});
-		// Inject avatar once
+		// Inject avatar into the button itself (not shadow)
 		if (!btn.querySelector('.finn-avatar')) {
 			var img = document.createElement('img');
 			img.src = 'https://raw.githubusercontent.com/jiarui0415/Asymbl_AgentAPI/refs/heads/main/Website/images/FinnHeadshot.jpg';
 			img.className = 'finn-avatar';
 			img.alt = 'Finn';
-			img.style.cssText = 'width:40px;height:40px;border-radius:50%;border:2px solid #fff;object-fit:cover;flex-shrink:0;display:inline-block;';
+			img.style.cssText = 'width:40px;height:40px;border-radius:50%;border:2px solid #fff;object-fit:cover;flex-shrink:0;display:inline-block;vertical-align:middle;margin-right:8px;';
 			btn.insertBefore(img, btn.firstChild);
 		}
 	}
@@ -434,13 +450,10 @@ margin: 0rem !important;
 			if (!em) return;
 			bodyObs.disconnect();
 			var pollInterval = setInterval(function() {
-				var root = em.shadowRoot;
-				if (!root) return;
-				var btn = root.querySelector('button');
+				var btn = deepQueryButton(em.shadowRoot);
 				if (!btn) return;
 				clearInterval(pollInterval);
 				patchFinnButton(btn);
-				// Re-patch if Salesforce re-renders the button
 				new MutationObserver(function() {
 					patchFinnButton(btn);
 				}).observe(btn, { childList: true, subtree: true });
