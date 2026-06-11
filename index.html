@@ -361,6 +361,74 @@ margin: 0rem !important;
 </defs>
 </svg></div></a></div></div><div class="w-layout-grid footer3_menu-wrapper"><div class="footer3_link-list"><div class="footer-link-header">Solutions</div><a href="/digital-workforce-activation" class="footer3_link">Digital Labor Advisory</a><a href="/staffing-recruiting-solutions" class="footer3_link">Recruiting Software</a><a href="/salesforce-strategy-execution" class="footer3_link">Salesforce Strategy &amp; Execution</a><a href="/managed-services-ongoing-support" class="footer3_link">Managed Services &amp; Ongoing Support</a></div><div class="footer3_link-list"><div class="footer-link-header">Products &amp; Industry</div><a href="/software-products-suites" class="footer3_link">Software Products &amp; Suites</a></div><div class="footer3_link-list"><div class="footer-link-header">Resources</div><a href="/blog" class="footer3_link">Blogs &amp; News</a><a href="/salesforce-for-recruiters" class="footer3_link">Salesforce for Recruiters</a></div><div class="footer3_link-list"><div class="footer-link-header">Company</div><a href="/about-us" class="footer3_link">About Us</a><a href="https://careers.asymbl.com/s/" target="_blank" class="footer3_link">Careers </a><a href="/connect" class="footer3_link">Connect with Us</a><a href="/support" class="footer3_link">Get Support</a></div></div></div></div><div class="divider-horizontal"></div><div class="padding-vertical padding-medium"><div class="footer3_bottom-wrapper"><div class="footer_credit_wrapper"><div class="footer3_credit-text">© 2025 Asymbl, Inc. All rights reserved.</div><div class="w-layout-grid footer3_legal-list"><a href="/privacy-policy" class="footer3_legal-link">Privacy Policy</a><a href="/terms-of-use" class="footer3_legal-link">Terms of Use</a></div></div><div class="footer_certification_wrapper"><img src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/68103f19f7bf81da0e6d2a96_21972-312_SOC_NonCPA_Blk.webp" loading="lazy" alt="AICPA SOC certification badge with text &#x27;aicpa.org/soc4000&#x27; on a black circular background." class="icon-1x1-medium"/><img src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/68103f448c6fc7cddc674a36_Pledge1_ProudMember_Large.webp" loading="lazy" alt="Pledge 1% logo with text &#x27;pledge1percent.com&#x27; and &#x27;Proud Member&#x27; banner." class="icon-1x1-medium"/><img src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/68103f4f1ec1a7bd3dc9b978_salesforce-summit-partner.webp" loading="lazy" alt="Salesforce logo with text &#x27;SUMMIT PARTNER&#x27; below it." class="icon-1x1-medium"/></div></div></div></div></div></div></footer></div><script src="https://d3e54v103j8qbb.cloudfront.net/js/jquery-3.5.1.min.dc5e7f18c8.js?site=67debf519813cb129f116b96" type="text/javascript" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/js/asymbl-610335.schunk.36b8fb49256177c8.js" type="text/javascript" integrity="sha384-4abIlA5/v7XaW1HMXKBgnUuhnjBYJ/Z9C1OSg4OhmVw9O3QeHJ/qJqFBERCDPv7G" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/js/asymbl-610335.schunk.a9b2a5b7a03bc026.js" type="text/javascript" integrity="sha384-YSmj45+h1DEZ2XNUzuLc6juC70j3epS1eIw8RaW0hGXglq7t/LJQ31X1PwZJzRKx" crossorigin="anonymous"></script><script src="https://cdn.prod.website-files.com/67debf519813cb129f116b96/js/asymbl-610335.eb71f8df.9a55ce73d087d272.js" type="text/javascript" integrity="sha384-DZ2DmQ5r5vEQBIJ6h2sC7EsMcP2W3VEeyVFdKdZqR3QAizLptb/eCzHzEp77nTjF" crossorigin="anonymous"></script>
 
+<!-- Embedded Messaging Context
+     Passes current page URL to Agentforce agent as ConversionLink via setSessionContext.
+     Implements ECv2 Context Events spec:
+     https://developer.salesforce.com/docs/service/messaging-web/guide/context-events.html
+
+     setSessionContext must only be called after onEmbeddedMessagingReady fires.
+     Listeners registered here (before bootstrap.init) to avoid the race condition
+     where the event fires before listeners inside initEmbeddedMessaging are attached.
+
+     ConversionLink is a Hidden Pre-Chat field in Agentforce Builder mapped from currentPage.
+     Access in Agent Script: {!@variables.ConversionLink}
+-->
+<script type='text/javascript'>
+(function () {
+  'use strict';
+
+  /* Prevents duplicate setSessionContext calls if both Ready and ConversationStarted fire. */
+  var contextSet = false;
+
+  /* Builds the _AgentContext payload accepted by setSessionContext. */
+  function buildContextArray() {
+    return [
+      {
+        name: '_AgentContext',
+        value: {
+          valueType: 'StructuredValue',
+          value: {
+            currentPage: window.location.href
+          }
+        }
+      }
+    ];
+  }
+
+  /*
+   * Sends current page URL as context to the agent.
+   * Guard check handles edge cases where bootstrap is partially initialized.
+   */
+  function setSessionContext() {
+    if (contextSet) return;
+    var bootstrap = window.embeddedservice_bootstrap;
+    if (!bootstrap || !bootstrap.utilAPI || typeof bootstrap.utilAPI.setSessionContext !== 'function') {
+      return;
+    }
+    bootstrap.utilAPI
+      .setSessionContext(buildContextArray())
+      .then(function () {
+        contextSet = true;
+        console.log('[Asymbl] ConversionLink set:', window.location.href);
+      })
+      .catch(function (err) { console.error('[Asymbl] Failed to set ConversionLink:', err); });
+  }
+
+  function init() {
+    /* Primary trigger — fires when bootstrap is ready to accept context. */
+    window.addEventListener('onEmbeddedMessagingReady', setSessionContext);
+    /* Fallback — re-sends context when conversation starts (e.g. if Ready was missed). */
+    window.addEventListener('onEmbeddedMessagingConversationStarted', setSessionContext);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
 <!-- Embedded Messaging -->
 <script type='text/javascript'>
   function initEmbeddedMessaging() {
@@ -393,20 +461,6 @@ margin: 0rem !important;
                   flex-shrink: 0 !important;
               }
           `;
-
-          window.addEventListener('onEmbeddedMessagingReady', () => {
-              embeddedservice_bootstrap.utilAPI.setSessionContext([
-                  {
-                      name: '_AgentContext',
-                      value: {
-                          valueType: 'StructuredValue',
-                          value: {
-                              currentPage: window.location.href
-                          }
-                      }
-                  }
-              ]).catch((err) => console.error('Failed to set ConversionLink:', err));
-          });
 
           embeddedservice_bootstrap.init(
               '00DVB000008wUQv',
