@@ -395,9 +395,9 @@ margin: 0rem !important;
           `;
 
           window.addEventListener('onEmbeddedMessagingReady', () => {
-              embeddedservice_bootstrap.utilAPI.setSessionContext({
-                  ConversionLink: window.location.href
-              }).catch((err) => console.error('Failed to set ConversionLink:', err));
+              embeddedservice_bootstrap.utilAPI.setSessionContext([
+                  { key: 'ConversionLink', value: window.location.href }
+              ]).catch((err) => console.error('Failed to set ConversionLink:', err));
           });
 
           embeddedservice_bootstrap.init(
