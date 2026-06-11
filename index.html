@@ -396,7 +396,15 @@ margin: 0rem !important;
 
           window.addEventListener('onEmbeddedMessagingReady', () => {
               embeddedservice_bootstrap.utilAPI.setSessionContext([
-                  { name: 'ConversionLink', value: window.location.href }
+                  {
+                      name: '_AgentContext',
+                      value: {
+                          valueType: 'StructuredValue',
+                          value: {
+                              currentPage: window.location.href
+                          }
+                      }
+                  }
               ]).catch((err) => console.error('Failed to set ConversionLink:', err));
           });
 
