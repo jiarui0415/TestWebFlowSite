@@ -394,6 +394,12 @@ margin: 0rem !important;
               }
           `;
 
+          window.addEventListener('onEmbeddedMessagingReady', () => {
+              embeddedservice_bootstrap.utilAPI.setSessionContext({
+                  ConversionLink: window.location.href
+              }).catch((err) => console.error('Failed to set ConversionLink:', err));
+          });
+
           embeddedservice_bootstrap.init(
               '00DVB000008wUQv',
               'AAA_FDE_Finn_GitHub',
